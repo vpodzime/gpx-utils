@@ -6,9 +6,7 @@ with Ada.Strings.Unbounded;
 with Position_Types;  use Position_Types;
 
 package body Elevator is
-   Api_Key : constant String := "~~~~TBD~~~~";
-
-   procedure Elevate_Points (Points : in out Position_Vector.Vector) is
+   procedure Elevate_Points (Points : in out Position_Vector.Vector; API_Key: in String) is
       package Ustr renames Ada.Strings.Unbounded;
       use type Ustr.Unbounded_String;
       use type Position_Types.Coord;

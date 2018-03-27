@@ -5,5 +5,5 @@ package Elevator is
    --  type Coord_Str is new String
    --    with Dynamic_Predicate => Coord_Str'Length = Coord_Len;
 
-   procedure Elevate_Points (Points : in out Position_Vector.Vector);
+   procedure Elevate_Points (Points : in out Position_Vector.Vector; API_Key: in String);
 end Elevator;
