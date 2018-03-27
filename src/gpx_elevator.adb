@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+with Elevator;
 with GPX_Reader;
 
 procedure GPX_Elevator is
@@ -6,4 +7,5 @@ procedure GPX_Elevator is
    Reader : GPX_Reader.Reader;
 begin
    Reader.Read_Points ("sample.gpx");
+   Elevator.Elevate_Points (Reader.Points);
 end GPX_Elevator;
