@@ -6,6 +6,8 @@ with Ada.Strings.Unbounded;
 with Position_Types;  use Position_Types;
 
 package body Elevator is
+   Biggest_Batch_Size : constant := 100;
+
    procedure Elevate_Points (Points : in out Position_Vector.Vector; API_Key: in String) is
       package Ustr renames Ada.Strings.Unbounded;
       use type Ustr.Unbounded_String;
@@ -15,20 +17,32 @@ package body Elevator is
       URI      : Ustr.Unbounded_String;
       Response : Util.Http.Clients.Response;
 
-      Batch_Size : constant := 100;
+      Batch_Size : Natural;
+      Offset : Natural := Points.First_Index;
+      N_Points : Natural := Points.Last_Index - Points.First_Index + 1;
    begin
-      URI := Ustr.To_Unbounded_String ("https://maps.googleapis.com/maps/api/elevation/json?locations=");
-      for I in 1..Batch_Size loop
-         URI := URI & Points(I).Lat & "," & Points(I).Lon;
-         if I < Batch_Size then
-            URI := URI & "|";
+      while N_Points > 0 loop
+         if N_Points - Biggest_Batch_Size > 0 then
+            Batch_Size := Biggest_Batch_Size;
+         else
+            Batch_Size := N_Points;
          end if;
+
+         URI := Ustr.To_Unbounded_String ("https://maps.googleapis.com/maps/api/elevation/json?locations=");
+         for I in Offset..(Offset + Batch_Size - 1) loop
+            URI := URI & Points(I).Lat & "," & Points(I).Lon;
+            if I < (Offset + Batch_Size - 1) then
+               URI := URI & "|";
+            end if;
+         end loop;
+         Offset := Offset + Batch_Size;
+         N_Points := N_Points - Batch_Size;
+         URI := URI & "&key=" & API_Key;
+         --  Ada.Text_IO.Put_Line ("URI: " & Ustr.To_String(URI));
+         Http.Get (Ustr.To_String(URI), Response);
+         Ada.Text_IO.Put_Line ("Code: " & Natural'Image (Response.Get_Status));
+         Ada.Text_IO.Put_Line (Response.Get_Body);
       end loop;
-      URI := URI & "&key=" & API_Key;
-      --  Ada.Text_IO.Put_Line ("URI: " & Ustr.To_String(URI));
-      Http.Get (Ustr.To_String(URI), Response);
-      Ada.Text_IO.Put_Line ("Code: " & Natural'Image (Response.Get_Status));
-      Ada.Text_IO.Put_Line (Response.Get_Body);
    end Elevate_Points;
 begin
    Util.Http.Clients.Curl.Register;
