@@ -9,8 +9,12 @@ project GPX_Elevator is
   for Main use ("gpx_elevator.adb");
 
   package Compiler is
-    for Default_Switches ("Ada") use ("-gnata", "-gnato", "-fstack-check", "-gnat12", "-gnatyO", "-gnati1", "-gnatf", "-gnatn"); --, "-fPIC");
+    for Default_Switches ("Ada") use ("-gnata", "-gnato", "-fstack-check", "-gnat12", "-gnatyO", "-gnati1", "-gnatf", "-gnatn", "-ggdb3"); --, "-fPIC");
   end Compiler;
+
+  package Binder is
+    for Default_Switches ("Ada") use ("-E");
+  end Binder;
 
   -- package Linker is
   --   for Default_Switches ("Ada") use ("-shared");
