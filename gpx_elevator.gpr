@@ -1,6 +1,7 @@
 with "xmlada";
 with "util";
 with "util_http";
+with "gnatcoll";
 
 project GPX_Elevator is
   for Source_Dirs use ("src");

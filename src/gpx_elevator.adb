@@ -4,6 +4,7 @@ with GNAT.OS_Lib;
 
 with Elevator;
 with GPX_Reader;
+with Position_Types;
 
 procedure GPX_Elevator is
    use Ada.Text_IO;
@@ -22,9 +23,13 @@ begin
 
    declare
       API_Key : String := Get_Line (File);
+      use Position_Types;
    begin
       Reader.Read_Points ("sample.gpx");
       Elevator.Elevate_Points (Reader.Points, API_Key);
+      for Point of Reader.Points loop
+         Put_Line("Point: " & Point.Lat & ", " & Point.Lon & " (" & Point.Elevation & ")");
+      end loop;
    end;
    GNAT.OS_Lib.OS_Exit (0);
 end GPX_Elevator;
