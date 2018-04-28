@@ -18,5 +18,8 @@ package Position_Types is
       Elevation: Elevation_Type;
    end record;
 
+   function "&" (Pre : String; Point : Position) return String;
+   function "&" (Pre : Ada.Strings.Unbounded.Unbounded_String; Point : Position) return Ada.Strings.Unbounded.Unbounded_String;
+
    package Position_Vector is new Ada.Containers.Vectors(Natural, Position);
 end Position_Types;

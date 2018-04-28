@@ -28,7 +28,7 @@ begin
       Reader.Read_Points ("sample.gpx");
       Elevator.Elevate_Points (Reader.Points, API_Key);
       for Point of Reader.Points loop
-         Put_Line("Point: " & Point.Lat & ", " & Point.Lon & " (" & Point.Elevation & ")");
+         Put_Line("Point: " & Point);
       end loop;
    end;
    GNAT.OS_Lib.OS_Exit (0);
