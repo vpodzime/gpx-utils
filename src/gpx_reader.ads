@@ -18,6 +18,8 @@ package GPX_Reader is
    procedure Store_Elevation (R : in out Reader);
    procedure Write (R : in Reader; File_Path : String);
 
+   procedure Free (R : in out Reader);
+
    --  type Reader is new Sax.Readers.Reader with private;
    --  type Reader is new Sax.Readers.Reader with record
    --     Points   : Position_Vector.Vector;
@@ -40,7 +42,7 @@ package GPX_Reader is
 
 private
    type Reader is new Reader_Base with record
-     Doc : DOM.Core.Document;
+     T_Reader : DOM.Readers.Tree_Reader;
    end record;
 
    function Get_N_Points (R: Reader) return Natural is (Natural(R.Points.Length));

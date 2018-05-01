@@ -53,5 +53,7 @@ begin
    Put_Line ("Writing GPX data");
    Reader.Write (Out_File_Path);
 
+   Reader.Free;
+
    GNAT.OS_Lib.OS_Exit (0);
 end GPX_Elevator;

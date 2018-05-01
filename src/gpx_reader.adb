@@ -43,6 +43,7 @@ package body GPX_Reader is
       T_Reader : Tree_Reader;
       List     : Node_List;
       N        : Node;
+      Doc      : Document;
    begin
       Set_Public_Id (Input, "GPX data");
       Set_System_Id (Input, Path);
@@ -53,9 +54,10 @@ package body GPX_Reader is
       Parse (T_Reader, Input);
       Close (Input);
 
-      R.Doc := Get_Tree (T_Reader);
+      R.T_Reader := T_Reader;
+      Doc := Get_Tree (T_Reader);
 
-      List := Get_Elements_By_Tag_Name (R.Doc, "trkpt");
+      List := Get_Elements_By_Tag_Name (Doc, "trkpt");
       for Index in 1 .. Length (List) loop
          N := Item (List, Index - 1);
          declare
@@ -70,19 +72,20 @@ package body GPX_Reader is
          end;
       end loop;
       Free (List);
-      --  BUG: Free (T_Reader) -- somewhere, somehow!
    end Read_Points;
 
    procedure Store_Elevation (R : in out Reader) is
       List     : Node_List;
       N        : Node;
+      Doc      : Document;
    begin
-      List := Get_Elements_By_Tag_Name (R.Doc, "trkpt");
+      Doc := Get_Tree (R.T_Reader);
+      List := Get_Elements_By_Tag_Name (Doc, "trkpt");
       for Index in 1 .. Length (List) loop
          N := Item (List, Index - 1);
          declare
-            Ele_Node : DOM.Core.Element := Create_Element (R.Doc, "ele");
-            Text_Node : DOM.Core.Text := Create_Text_Node (R.Doc, Elevation_Type'Image (R.Points(Index - 1).Elevation));
+            Ele_Node : DOM.Core.Element := Create_Element (Doc, "ele");
+            Text_Node : DOM.Core.Text := Create_Text_Node (Doc, Elevation_Type'Image (R.Points(Index - 1).Elevation));
          begin
             Text_Node := Append_Child (Ele_Node, Text_Node);
             Ele_Node := Append_Child (N, Ele_Node);
@@ -95,11 +98,17 @@ package body GPX_Reader is
       use Ada.Streams.Stream_IO;
       Output_File   : File_Type;
       Output_Stream : Stream_Access;
+      Doc      : Document;
    begin
+      Doc := Get_Tree (R.T_Reader);
       Create (Output_File, Name => File_Path);
       Output_Stream := Stream (Output_File);
-      DOM.Core.Nodes.Write (Output_Stream, R.Doc, Pretty_Print => True);
+      DOM.Core.Nodes.Write (Output_Stream, Doc, Pretty_Print => True);
       Close (Output_File);
    end;
 
+   procedure Free (R : in out Reader) is
+   begin
+      Free (R.T_Reader);
+   end Free;
 end GPX_Reader;
