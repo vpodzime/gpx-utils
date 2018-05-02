@@ -49,6 +49,8 @@ package body GPX_Reader is
       Set_System_Id (Input, Path);
       Open (Path, Input);
 
+      Set_Feature (T_Reader, Namespace_Feature, True);
+      Set_Feature (T_Reader, Namespace_Prefixes_Feature, True);
       Set_Feature (T_Reader, Validation_Feature, False);
 
       Parse (T_Reader, Input);
