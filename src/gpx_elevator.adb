@@ -1,5 +1,7 @@
 with Ada.Text_IO;
 with Ada.IO_Exceptions;
+with Ada.Directories;
+with Ada.Environment_Variables;
 with GNAT.OS_Lib;
 with GNAT.Command_Line;
 
@@ -9,6 +11,9 @@ with Position_Types;
 
 procedure GPX_Elevator is
    use Ada.Text_IO;
+   use Ada.Directories;
+   package Env renames Ada.Environment_Variables;
+
    Reader : GPX_Reader.Reader;
    File : File_Type;
    GPX_File_Path : String := GNAT.Command_Line.Get_Argument;
@@ -24,10 +29,22 @@ begin
       GNAT.OS_Lib.OS_Exit (1);
    end if;
 
+   declare
+      Local_Key_File : String := ".api-key";
+      Home_Key_File : String := Env.Value("HOME") & "/.gpx_utils/api-key";
    begin
-      Open (File => File,
-            Mode => In_File,
-            Name => ".api-key");
+      if Exists (Local_Key_File) then
+         Open (File => File,
+               Mode => In_File,
+               Name => Local_Key_File);
+      elsif Exists (Home_Key_File) then
+         Open (File => File,
+               Mode => In_File,
+               Name => Home_Key_File);
+      else
+         Put_Line ("No API key file found");
+         GNAT.OS_Lib.OS_Exit (1);
+      end if;
    exception
       when others =>
          Put_Line ("Failed to read the API key from the .api-key file");
