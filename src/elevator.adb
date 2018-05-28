@@ -3,33 +3,49 @@ with Util.Http.Clients;
 with Util.Http.Clients.Curl;
 with Ada.Strings.Unbounded;
 with GNATCOLL.JSON;
+with Ada.Calendar;
 
 with Position_Types;  use Position_Types;
 
 package body Elevator is
-   Biggest_Batch_Size : constant := 100;
+   package Ustr renames Ada.Strings.Unbounded;
+
+   Locations_Per_Request : constant := 250;
+   N_Tasks : constant := 10;
+   Requests_Per_Second : constant := 50;
 
    procedure Update_Elevation (Points   : in out Position_Vector.Vector;
                                From     : Natural;
                                To       : Natural;
                                Data_Str : in String);
 
-   procedure Elevate_Points (Points : in out Position_Vector.Vector; API_Key: in String) is
-      package Ustr renames Ada.Strings.Unbounded;
+   task type Elevate_Task (Points : access Position_Vector.Vector) is
+      entry Elevate (From   : in Natural;
+                     To     : in Natural;
+                     API_Key: in Ustr.Unbounded_String);
+      entry Finish;
+   end Elevate_Task;
+
+   procedure Elevate_Points_Sub (Points : in out Position_Vector.Vector;
+                                 From   : in Natural;
+                                 To     : in Natural;
+                                 API_Key: in Ustr.Unbounded_String) is
       use type Ustr.Unbounded_String;
       use type Position_Types.Coord;
+      use type Ada.Calendar.Time;
 
       Http     : Util.Http.Clients.Client;
       URI      : Ustr.Unbounded_String;
       Response : Util.Http.Clients.Response;
 
       Batch_Size : Natural;
-      Offset : Natural := Points.First_Index;
-      N_Points : Natural := Points.Last_Index - Points.First_Index + 1;
+      Offset : Natural := From;
+      N_Points : Natural := To - From + 1;
+      Requested : Ada.Calendar.Time;
    begin
       while N_Points > 0 loop
-         if N_Points - Biggest_Batch_Size > 0 then
-            Batch_Size := Biggest_Batch_Size;
+         if N_Points - Locations_Per_Request > 0 then
+            Batch_Size := Locations_Per_Request;
          else
             Batch_Size := N_Points;
          end if;
@@ -43,6 +59,7 @@ package body Elevator is
          end loop;
          URI := URI & "&key=" & API_Key;
          --  Ada.Text_IO.Put_Line ("URI: " & Ustr.To_String(URI));
+         Requested := Ada.Calendar.Clock;
          Http.Get (Ustr.To_String(URI), Response);
          --  Ada.Text_IO.Put_Line ("Code: " & Natural'Image (Response.Get_Status));
          --  Ada.Text_IO.Put_Line (Response.Get_Body);
@@ -54,6 +71,54 @@ package body Elevator is
 
          Offset := Offset + Batch_Size;
          N_Points := N_Points - Batch_Size;
+
+         delay until Requested + Duration(1.00 / (Requests_Per_Second / N_Tasks));
+      end loop;
+   end Elevate_Points_Sub;
+
+   task body Elevate_Task is
+      T_From   : Natural;
+      T_To     : Natural;
+      T_API_Key: Ustr.Unbounded_String;
+   begin
+      accept Elevate (From   : in Natural;
+                      To     : in Natural;
+                      API_Key: in Ustr.Unbounded_String) do
+         T_From := From;
+         T_To := To;
+         T_API_Key := API_Key;
+      end Elevate;
+      Elevate_Points_Sub (Points.all, T_From, T_To, T_API_Key);
+      accept Finish do
+         null;
+      end Finish;
+   end Elevate_Task;
+
+   procedure Elevate_Points (Points : in out Position_Vector.Vector; API_Key: in String) is
+      type Elevate_Task_Access is access Elevate_Task
+        with Storage_Size => (2 * N_Tasks) * Elevate_Task'Max_Size_In_Storage_Elements;
+
+      Tasks : array (0..N_Tasks - 1) of Elevate_Task_Access;
+      N_Points : Natural := Points.Last_Index - Points.First_Index + 1;
+      Work_Item_Size : Natural := N_Points / N_Tasks;
+      From : Natural;
+      To   : Natural;
+      U_API_Key : Ustr.Unbounded_String := Ustr.To_Unbounded_String (API_Key);
+   begin
+      --  Ada.Text_IO.Put_Line ("N_Points: " & Natural'Image(N_Points));
+      for I in 0..(N_Tasks - 2) loop
+         From := I * Work_Item_Size;
+         To   := ((I + 1) * Work_Item_Size) - 1;
+         Tasks(I) := new Elevate_Task (Points'Access);
+         Tasks(I).Elevate (From, To, U_API_Key);
+      end loop;
+      From := (N_Tasks - 1) * Work_Item_Size;
+      To   := (N_Tasks * Work_Item_Size) + (N_Points mod N_Tasks) - 1;
+      Tasks(N_Tasks - 1) := new Elevate_Task (Points'Access);
+      Tasks(N_Tasks - 1).Elevate (From, To, U_API_Key);
+
+      for I in 0..(N_Tasks - 1) loop
+         Tasks(I).Finish;
       end loop;
    end Elevate_Points;
 
@@ -88,6 +153,11 @@ package body Elevator is
 
       if N_Results /= (To - From + 1) then
          Ada.Text_IO.Put_Line ("Incorrect number of results!");
+         declare
+            Status : String := Data.Get ("status");
+         begin
+            Ada.Text_IO.Put_Line ("status: " & Status);
+         end;
          return;
       end if;
 
