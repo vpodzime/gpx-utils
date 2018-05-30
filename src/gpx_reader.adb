@@ -7,6 +7,7 @@ with DOM.Core.Attrs;     use DOM.Core.Attrs;
 with Input_Sources.File; use Input_Sources.File;
 with Unicode.CES;
 with Ada.Streams.Stream_IO;
+with Ada.Containers;
 
 with Position_Types;           use Position_Types;
 
@@ -60,6 +61,7 @@ package body GPX_Reader is
       Doc := Get_Tree (T_Reader);
 
       List := Get_Elements_By_Tag_Name (Doc, "trkpt");
+      R.Points.Reserve_Capacity (Ada.Containers.Count_Type(Length (List)));
       for Index in 1 .. Length (List) loop
          N := Item (List, Index - 1);
          declare
