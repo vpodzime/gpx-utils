@@ -13,10 +13,12 @@ package Position_Types is
                 return Ada.Strings.Unbounded.Unbounded_String;
 
    type Position is record
-      Lon: Coord;
-      Lat: Coord;
-      Elevation: Elevation_Type;
+      Lon: Coord := 0.00;
+      Lat: Coord := 0.00;
+      Elevation: Elevation_Type := 0.00;
    end record;
+
+   Unknown_Elevation : constant Elevation_Type := 0.00;
 
    function "&" (Pre : String; Point : Position) return String;
    function "&" (Pre : Ada.Strings.Unbounded.Unbounded_String; Point : Position) return Ada.Strings.Unbounded.Unbounded_String;

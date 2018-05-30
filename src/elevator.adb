@@ -50,6 +50,12 @@ package body Elevator is
             Batch_Size := N_Points;
          end if;
 
+         if (for all I in Offset..(Offset + Batch_Size - 1) =>
+               Points(I).Elevation /= Unknown_Elevation) then
+            --  nothing to do here if all points already have elevation
+            return;
+         end if;
+
          URI := Ustr.To_Unbounded_String ("https://maps.googleapis.com/maps/api/elevation/json?locations=");
          for I in Offset..(Offset + Batch_Size - 1) loop
             URI := URI & Points(I).Lat & "," & Points(I).Lon;
@@ -162,20 +168,26 @@ package body Elevator is
       end if;
 
       for I in 1..N_Results loop
-         Point_Data := Get (Results, I);
-         Elevation := Point_Data.Get ("elevation");
-         --  Ada.Text_IO.Put_Line ("Elevation: " & Elevation_Type(Get_Long_Float (Elevation)));
-         case Kind (Elevation) is
-            when JSON_Float_Type => Points(From + I - 1).Elevation := Elevation_Type(Get_Long_Float (Elevation));
-            when JSON_Int_Type =>
-               declare
-                  Value : Integer;
-               begin
-                  Value := Get (Elevation);
-                  Points(From + I - 1).Elevation := Elevation_Type(Value);
-               end;
-            when others => Ada.Text_IO.Put_Line ("Unexpected elevation data: " & Write (Elevation));
-         end case;
+         if Points(From + I - 1).Elevation = Unknown_Elevation then
+            Point_Data := Get (Results, I);
+            Elevation := Point_Data.Get ("elevation");
+            --  Ada.Text_IO.Put_Line ("Elevation: " & Elevation_Type(Get_Long_Float (Elevation)));
+            case Kind (Elevation) is
+               when JSON_Float_Type => Points(From + I - 1).Elevation := Elevation_Type(Get_Long_Float (Elevation));
+               when JSON_Int_Type =>
+                  declare
+                     Value : Integer;
+                  begin
+                     Value := Get (Elevation);
+                     Points(From + I - 1).Elevation := Elevation_Type(Value);
+                  end;
+               when others => Ada.Text_IO.Put_Line ("Unexpected elevation data: " & Write (Elevation));
+            end case;
+         else
+            --  respect the original value
+            --  TODO: detect and report big differences?
+            null;
+         end if;
       end loop;
    end Update_Elevation;
 
