@@ -1,15 +1,20 @@
 with DOM.Readers;
 with DOM.Core;
+with Ada.Containers.Vectors;
 
 --  with Sax.Readers;
 --  with Unicode.CES;
 --  with Sax.Attributes;
 
-with Position_Types;  use Position_Types;
+with Position_Types;
 
+generic
+   type Point is new Position_Types.Position with private;
+   with package Point_Vector is new Ada.Containers.Vectors(Natural, Point);
+   with function Read_Point (N : in Dom.Core.Node) return Point;
 package GPX_Reader is
    type Reader_Base is tagged record
-      Points : Position_Vector.Vector;
+      Points : Point_Vector.Vector;
    end record;
 
    type Reader is new Reader_Base with private;

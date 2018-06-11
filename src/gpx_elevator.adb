@@ -4,17 +4,58 @@ with Ada.Directories;
 with Ada.Environment_Variables;
 with GNAT.OS_Lib;
 with GNAT.Command_Line;
+with DOM.Core;          use DOM.Core;
+with DOM.Core.Elements;
+with DOM.Core.Nodes;    use DOM.Core.Nodes;
+with DOM.Core.Attrs;    use DOM.Core.Attrs;
+with DOM.Core.Character_Datas;
 
 with Elevator;
 with GPX_Reader;
-with Position_Types;
+with Position_Types;    use Position_Types;
+
+--  TODO: move all the XML manipulation into a separate package
 
 procedure GPX_Elevator is
    use Ada.Text_IO;
    use Ada.Directories;
    package Env renames Ada.Environment_Variables;
 
-   Reader : GPX_Reader.Reader;
+   function Get_Elevation (Point_Node : DOM.Core.Element) return Elevation_Type is
+      Children : Node_List := DOM.Core.Elements.Get_Elements_By_Tag_Name (Point_Node, "ele");
+      Child    : DOM.Core.Element;
+      T_Node   : DOM.Core.Text;
+      Ret      : Elevation_Type := 0.00;
+   begin
+      for I in 0..Length (Children) - 1 loop
+         Child := Item (Children, I);
+         T_Node := First_Child (Child);
+         Ret := Elevation_Type'Value (DOM.Core.Character_Datas.Data (T_Node));
+      end loop;
+      Free (Children);
+      return Ret;
+   end Get_Elevation;
+
+   function Read_Point (N : in Dom.Core.Node) return Position is
+      Pos : Position;
+      A   :   Attr;
+   begin
+      A := Get_Named_Item (Attributes (N), "lon");
+      Pos.Lon := Coord'Value (Value(A));
+      A := Get_Named_Item (Attributes (N), "lat");
+      Pos.Lat := Coord'Value (Value(A));
+      Pos.Elevation := Get_Elevation (N);
+      return Pos;
+   end Read_Point;
+
+   package Base_Point_Reader is new GPX_Reader(Position_Types.Position,
+                                               Position_Types.Position_Vector,
+                                               Read_Point);
+
+   package Base_Point_Elevator is new Elevator(Position_Types.Position,
+                                               Position_Types.Position_Vector);
+
+   Reader : Base_Point_Reader.Reader;
    File : File_Type;
    GPX_File_Path : String := GNAT.Command_Line.Get_Argument;
    Out_File_Path : String := GNAT.Command_Line.Get_Argument;
@@ -58,7 +99,7 @@ begin
       Put_Line ("Reading GPX data");
       Reader.Read_Points (GPX_File_Path);
       Put_Line ("Getting elevation data");
-      Elevator.Elevate_Points (Reader.Points, API_Key);
+      Base_Point_Elevator.Elevate_Points (Reader.Points, API_Key);
       --  for Point of Reader.Points loop
       --     Put_Line("Point: " & Point);
       --  end loop;

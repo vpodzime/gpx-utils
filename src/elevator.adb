@@ -14,19 +14,19 @@ package body Elevator is
    N_Tasks : constant := 10;
    Requests_Per_Second : constant := 50;
 
-   procedure Update_Elevation (Points   : in out Position_Vector.Vector;
+   procedure Update_Elevation (Points   : in out Point_Vector.Vector;
                                From     : Natural;
                                To       : Natural;
                                Data_Str : in String);
 
-   task type Elevate_Task (Points : access Position_Vector.Vector) is
+   task type Elevate_Task (Points : access Point_Vector.Vector) is
       entry Elevate (From   : in Natural;
                      To     : in Natural;
                      API_Key: in Ustr.Unbounded_String);
       entry Finish;
    end Elevate_Task;
 
-   procedure Elevate_Points_Sub (Points : in out Position_Vector.Vector;
+   procedure Elevate_Points_Sub (Points : in out Point_Vector.Vector;
                                  From   : in Natural;
                                  To     : in Natural;
                                  API_Key: in Ustr.Unbounded_String) is
@@ -100,7 +100,7 @@ package body Elevator is
       end Finish;
    end Elevate_Task;
 
-   procedure Elevate_Points (Points : in out Position_Vector.Vector; API_Key: in String) is
+   procedure Elevate_Points (Points : in out Point_Vector.Vector; API_Key: in String) is
       type Elevate_Task_Access is access Elevate_Task
         with Storage_Size => (2 * N_Tasks) * Elevate_Task'Max_Size_In_Storage_Elements;
 
@@ -128,7 +128,7 @@ package body Elevator is
       end loop;
    end Elevate_Points;
 
-   procedure Update_Elevation (Points   : in out Position_Vector.Vector;
+   procedure Update_Elevation (Points   : in out Point_Vector.Vector;
                                From     : Natural;
                                To       : Natural;
                                Data_Str : in String) is

@@ -4,14 +4,13 @@ with DOM.Core;           use DOM.Core;
 with DOM.Core.Documents; use DOM.Core.Documents;
 with DOM.Core.Nodes;     use DOM.Core.Nodes;
 with DOM.Core.Attrs;     use DOM.Core.Attrs;
-with DOM.Core.Character_Datas;
 with DOM.Core.Elements;
 with Input_Sources.File; use Input_Sources.File;
 with Unicode.CES;
 with Ada.Streams.Stream_IO;
 with Ada.Containers;
 
-with Position_Types;           use Position_Types;
+with Position_Types;     use Position_Types;
 
 package body GPX_Reader is
    --  overriding procedure Start_Element
@@ -41,21 +40,6 @@ package body GPX_Reader is
    --     end if;
    --  end End_Element;
 
-   function Get_Elevation (Point_Node : DOM.Core.Element) return Elevation_Type is
-      Children : Node_List := DOM.Core.Elements.Get_Elements_By_Tag_Name (Point_Node, "ele");
-      Child : DOM.Core.Element;
-      T_Node : DOM.Core.Text;
-      Ret  : Elevation_Type := 0.00;
-   begin
-      for I in 0..Length (Children) - 1 loop
-         Child := Item (Children, I);
-         T_Node := First_Child (Child);
-         Ret := Elevation_Type'Value (DOM.Core.Character_Datas.Data (T_Node));
-      end loop;
-      Free (Children);
-      return Ret;
-   end Get_Elevation;
-
    procedure Read_Points (R: in out Reader; Path: in String) is
       Input    : File_Input;
       T_Reader : Tree_Reader;
@@ -82,15 +66,9 @@ package body GPX_Reader is
       for Index in 1 .. Length (List) loop
          N := Item (List, Index - 1);
          declare
-            Pos : Position;
-            A :   Attr;
+            Pnt : Point := Read_Point (N);
          begin
-            A := Get_Named_Item (Attributes (N), "lon");
-            Pos.Lon := Coord'Value (Value(A));
-            A := Get_Named_Item (Attributes (N), "lat");
-            Pos.Lat := Coord'Value (Value(A));
-            Pos.Elevation := Get_Elevation (N);
-            R.Points.Append(Pos);
+            R.Points.Append (Pnt);
          end;
       end loop;
       Free (List);
