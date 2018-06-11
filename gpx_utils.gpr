@@ -3,11 +3,11 @@ with "util";
 with "util_http";
 with "gnatcoll";
 
-project GPX_Elevator is
+project GPX_Utils is
   for Source_Dirs use ("src");
   for Object_Dir use "obj";
   for Exec_Dir use ".";
-  for Main use ("gpx_elevator.adb");
+  for Main use ("gpx_elevator.adb", "gpx_analyzer.adb");
 
   package Compiler is
     for Default_Switches ("Ada") use ("-gnata", "-gnato", "-fstack-check", "-gnat12", "-gnatyO", "-gnati1", "-gnatf", "-gnatn", "-ggdb3"); --, "-fPIC");
@@ -20,4 +20,4 @@ project GPX_Elevator is
   -- package Linker is
   --   for Default_Switches ("Ada") use ("-shared");
   -- end Linker;
-end GPX_Elevator;
+end GPX_Utils;
