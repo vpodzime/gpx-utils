@@ -13,7 +13,7 @@ work may introduce some other good languages.
 
 ### Planned features are:
 
-- [ ] add elevation information to GPX data
+- [x] add elevation information to GPX data
 
 - [ ] add speed information to the GPX data
 
